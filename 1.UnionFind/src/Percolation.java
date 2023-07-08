@@ -7,8 +7,8 @@ public class Percolation {
 
     private int n;
     private boolean[] grid;
-    public QuickFindUF perc;
-    public QuickFindUF full;
+    public WeightedQuickUnionUF perc;
+    public WeightedQuickUnionUF full;
     private int openSiteCount;
 
 
@@ -19,8 +19,8 @@ public class Percolation {
         if (n <= 0) throw new IllegalArgumentException("n<0");
         this.n = n;
         this.grid = new boolean[n*n];
-        this.perc = new QuickFindUF(n*n);
-        this.full = new QuickFindUF(n*n);
+        this.perc = new WeightedQuickUnionUF(n*n);
+        this.full = new WeightedQuickUnionUF(n*n);
         this.openSiteCount = 0;
 
     }

@@ -7,8 +7,10 @@ public class Percolation {
 
     private int n;
     private boolean[] grid;
-    private QuickFindUF open;
+    public QuickFindUF perc;
+    public QuickFindUF full;
     private int openSiteCount;
+
 
 
 
@@ -17,7 +19,8 @@ public class Percolation {
         if (n <= 0) throw new IllegalArgumentException("n<0");
         this.n = n;
         this.grid = new boolean[n*n];
-        this.open = new QuickFindUF(n*n);
+        this.perc = new QuickFindUF(n*n);
+        this.full = new QuickFindUF(n*n);
         this.openSiteCount = 0;
 
     }
@@ -26,51 +29,39 @@ public class Percolation {
     public void open(int row, int col) {
         if (row < 1 || col < 1 || row > n || col > n)
             throw new IllegalArgumentException("out of bound");
-        grid[row*(n-1)+col] = true;
+        grid[(row-1)*n+col-1] = true;
         openSiteCount++;
 
         if (row == 1) {
-            open.union(col,0);
+            perc.union(col-1,0);
+        }
+
+        if (row == n) {
+            perc.union((row-1)*n+col-1, n*n-1);
         }
 
         //above
-        if (isOpen(row-1,col))
-            open.union(row*(n-1)+col, (row-1)*(n-1) + col);
+        if (row > 1 && isOpen(row-1,col))
+            perc.union((row-1-1)*n + col -1,(row-1)*n + col -1);
         // left
         if (col > 1 && isOpen(row, col-1))
-            open.union(row*(n-1)+col, row*(n-1)+(col-1));
+            perc.union((row-1)*n+(col-1) -1,(row-1)*n + col -1);
         // right
         if (col < n && isOpen(row, col+1))
-            open.union(row*(n-1)+col, row*(n-1)+(col+1));
+            perc.union((row-1)*n+(col+1) -1,(row-1)*n + col -1);
         // under
         if (row < n && isOpen(row+1,col))
-            open.union(row*(n-1)+col, (row+1)*(n-1)*col);
-
-        if (row == n) {
-            open.union(row*(n-1)+col, (row-1)*(n-1) + col); // above
-            open.union(row*(n-1)+col, row*(n-1)+(col-1)); // left
-            open.union(row*(n-1)+col, row*(n-1)+(col+1)); // right
-        }
-        if (col == 1) {
-            open.union(row*(n-1)+col, (row-1)*(n-1) + col); // above
-            open.union(row*(n-1)+col, row*(n-1)+(col+1)); // right
-            open.union(row*(n-1)+col, (row+1)*(n-1)*col); // under
-        }
-        if (col == n) {
-            open.union(row*(n-1)+col, (row-1)*(n-1) + col); //above
-            open.union(row*(n-1)+col, row*(n-1)+(col-1)); // left
-            open.union(row*(n-1)+col, (row+1)*(n-1)*col); // under
-        }
+            perc.union((row+1-1)*n + col -1,(row-1)*n + col -1);
     }
 
     // is the site (row, col) open?
     public boolean isOpen(int row, int col) {
-        return grid[row*(n-1)+col];
+        return grid[(row-1)*n + col - 1];
     }
 
     // is the site (row, col) full?
     public boolean isFull(int row, int col) {
-        return open.connected(row*(n-1)+col,0);
+        return perc.find((row-1)*n + col - 1) == perc.find(0);
     }
 
     // returns the number of open sites
@@ -80,11 +71,7 @@ public class Percolation {
 
     // does the system percolate?
     public boolean percolates() {
-        for (int i = n*n; i > n*n-n ; i--) {
-            if (open.connected(i,0))
-                return true;
-        }
-        return false;
+        return perc.find(0) == perc.find(n*n-1);
     }
 
     // test client (optional)
@@ -94,8 +81,14 @@ public class Percolation {
         p.open(3,2);
         p.open(1,1);
         p.open(4,2);
-        p.percolates();
-        p.numberOfOpenSites();
-        p.isFull(3,2);
+//        p.open(2,2);
+        System.out.println(p.perc.find(4));
+        System.out.println(p.perc.find(0));
+//        System.out.println(p.perc.connected(0,0));
+//        System.out.println(p.perc.connected(4,0));
+//
+        System.out.println(p.percolates());
+        System.out.println(p.numberOfOpenSites());
+        System.out.println(p.isFull(3,2));
     }
 }

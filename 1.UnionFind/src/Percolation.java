@@ -2,10 +2,12 @@ import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 
 public class Percolation {
 
-    private int n;
+    private int gridSize;
     private boolean[] grid;
-    private WeightedQuickUnionUF perc;
-    private WeightedQuickUnionUF full;
+    private WeightedQuickUnionUF wquGrid;
+    private WeightedQuickUnionUF wquFull;
+    private int virtualBottom;
+    private int virtualTop;
     private int openSiteCount;
 
 
@@ -14,62 +16,75 @@ public class Percolation {
     // creates n-by-n grid, with all sites initially blocked
     public Percolation(int n) {
         if (n <= 0) throw new IllegalArgumentException();
-        this.n = n;
+        this.gridSize = n;
         this.grid = new boolean[n*n];
-        this.perc = new WeightedQuickUnionUF(n*n);
-        this.full = new WeightedQuickUnionUF(n*n);
+        this.wquGrid = new WeightedQuickUnionUF(n*n + 2); // includes virtual top, bottom
+        this.wquFull = new WeightedQuickUnionUF(n*n + 1); // includes virtual top
+        this.virtualBottom = n*n + 1;
+        this.virtualTop = n*n;
         this.openSiteCount = 0;
     }
 
     // opens the site (row, col) if it is not open already
     public void open(int row, int col) {
-        if (row < 1 || col < 1 || row > n || col > n)
+        if (row < 1 || col < 1 || row > gridSize || col > gridSize)
             throw new IllegalArgumentException();
-        if (isOpen(row,col)) {
+
+        if (isOpen(row,col))
             return;
-        }
-        grid[(row-1)*n+col-1] = true;
+
+        grid[(row-1) * gridSize + col - 1] = true;
         openSiteCount++;
 
         if (row == 1) {
-            perc.union(col-1, 0);
+            wquGrid.union(col-1, virtualTop);
+            wquFull.union(col-1, virtualTop);
         }
 
-        if (row == n) {
-            perc.union((row-1)*n+col-1, n*n-1);
-        }
+        if (row == gridSize)
+            wquGrid.union((row-1)* gridSize +col-1, virtualBottom);
 
         // above
-        if (row > 1 && isOpen(row-1, col))
-            perc.union((row-1-1)*n + col -1, (row-1)*n + col -1);
+        if (row > 1 && isOpen(row-1, col)) {
+            wquGrid.union((row - 1 - 1) * gridSize + col - 1, (row - 1) * gridSize + col - 1);
+            wquFull.union((row - 1 - 1) * gridSize + col - 1, (row - 1) * gridSize + col - 1);
+        }
         // left
-        if (col > 1 && isOpen(row, col-1))
-            perc.union((row-1)*n+(col-1) -1, (row-1)*n + col -1);
+        if (col > 1 && isOpen(row, col-1)) {
+            wquGrid.union((row - 1) * gridSize + (col - 1) - 1, (row - 1) * gridSize + col - 1);
+            wquFull.union((row - 1) * gridSize + (col - 1) - 1, (row - 1) * gridSize + col - 1);
+        }
         // right
-        if (col < n && isOpen(row, col+1))
-            perc.union((row-1)*n+(col+1) -1, (row-1)*n + col -1);
+        if (col < gridSize && isOpen(row, col+1)) {
+            wquGrid.union((row - 1) * gridSize + (col + 1) - 1, (row - 1) * gridSize + col - 1);
+            wquFull.union((row - 1) * gridSize + (col + 1) - 1, (row - 1) * gridSize + col - 1);
+        }
         // under
-        if (row < n && isOpen(row+1, col))
-            perc.union((row+1-1)*n + col -1, (row-1)*n + col -1);
+        if (row < gridSize && isOpen(row+1, col)) {
+            wquGrid.union((row + 1 - 1) * gridSize + col - 1, (row - 1) * gridSize + col - 1);
+            wquFull.union((row + 1 - 1) * gridSize + col - 1, (row - 1) * gridSize + col - 1);
+        }
     }
 
     // is the site (row, col) open?
     public boolean isOpen(int row,int col) {
-        if (row < 1 || col < 1 || row > n || col > n)
+        if (row < 1 || col < 1 || row > gridSize || col > gridSize)
             throw new IllegalArgumentException();
-        return grid[(row-1)*n + col - 1];
+        return grid[(row-1)* gridSize + col - 1];
     }
 
     // is the site (row, col) full?
     public boolean isFull(int row,int col) {
-        if (row < 1 || col < 1 || row > n || col > n)
+        if (row < 1 || col < 1 || row > gridSize || col > gridSize)
             throw new IllegalArgumentException();
-        if (row == 1) {
-            return isOpen(row, col);
-        }
-        if (openSiteCount != 0)
-            return perc.find((row-1)*n + col - 1) == perc.find(0);
-        return false;
+        return wquFull.find((row-1)* gridSize + col - 1) == wquFull.find(virtualTop);
+
+//        if (row == 1) {
+//            return isOpen(row, col);
+//        }
+//        if (openSiteCount != 0)
+//            return wquGrid.find((row-1)* gridSize + col - 1) == wquGrid.find(0);
+//        return false;
     }
 
     // returns the number of open sites
@@ -79,7 +94,8 @@ public class Percolation {
 
     // does the system percolate?
     public boolean percolates() {
-        return perc.find(0) == perc.find(n*n-1);
+        return wquGrid.find(virtualTop) == wquGrid.find(virtualBottom);
+//        return wquGrid.find(0) == wquGrid.find(gridSize * gridSize -1);
     }
 
     // test client (optional)
